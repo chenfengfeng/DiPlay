@@ -32,7 +32,7 @@ The release changes were tested on the development DiLink5.1 car: live windshiel
 - [Release notes](CHANGELOG.md)
 - [Credits and licenses](docs/THIRD_PARTY_NOTICES.md)
 
-The website is available in English, Arabic, Russian, Spanish and Simplified Chinese. The current app interface is English.
+The app interface is available in English and Simplified Chinese. It follows the system language on first launch; choose System default, English or 简体中文 from Settings. Unsupported system languages use English. The website is available in English, Arabic, Russian, Spanish and Simplified Chinese.
 
 ## Source and credits
 
