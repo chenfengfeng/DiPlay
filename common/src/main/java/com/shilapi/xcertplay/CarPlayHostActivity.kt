@@ -1,6 +1,7 @@
 package com.shilapi.xcertplay
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -104,6 +105,11 @@ class CarPlayHostActivity : ComponentActivity() {
     private var wifiRecoveryButton: View? = null
     private var reconnectAttempts = 0
     private lateinit var airPlayIdentity: AirPlayIdentity
+    private var languagePreferenceAtCreate = AppLocale.SYSTEM
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
 
     // CH341 USB\VID_1A86&PID_5512&REV_0304 is the deployment-supplied bridge identity.
     private fun createRuntimeConfig(): CarPlayRuntimeConfig = CarPlayRuntimeConfig(
@@ -372,6 +378,7 @@ class CarPlayHostActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        languagePreferenceAtCreate = AppLocale.preference(this)
         if (intent.action == "android.hardware.usb.action.USB_DEVICE_ATTACHED") {
             AirPlayPersistence.saveWirelessEnabled(this, false)
         }
@@ -549,6 +556,12 @@ class CarPlayHostActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        val languagePreference = AppLocale.preference(this)
+        if (languagePreference != languagePreferenceAtCreate) {
+            languagePreferenceAtCreate = languagePreference
+            recreate()
+            return
+        }
         locationPermissionAvailable = hasFineLocationPermission()
         if (locationReportingEnabled && !locationPermissionAvailable && !menuOpen) {
             requestLocationPermission()
@@ -620,7 +633,7 @@ class CarPlayHostActivity : ComponentActivity() {
             isClickable = true
         }
         panel.addView(ImageView(this).apply {
-            setImageResource(R.drawable.ic_carplay); contentDescription = "CarPlay"
+            setImageResource(R.drawable.ic_carplay); contentDescription = t("CarPlay")
         }, LinearLayout.LayoutParams(dp(88), dp(88)))
         panel.addView(TextView(this).apply {
             text = "DiPlay"; textSize = 34f; setTextColor(Color.rgb(241, 245, 252))
@@ -628,30 +641,30 @@ class CarPlayHostActivity : ComponentActivity() {
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
         })
         val stage = TextView(this).apply {
-            text = "Getting CarPlay ready…"; textSize = 22f; gravity = Gravity.CENTER
+            text = t("Getting CarPlay ready…"); textSize = 22f; gravity = Gravity.CENTER
             setTextColor(Color.rgb(241, 245, 252))
         }
         panel.addView(stage)
         panel.addView(TextView(this).apply {
-            text = if (wirelessEnabled) "Keep your iPhone nearby with Bluetooth and Wi-Fi on.\nAllow CarPlay if your iPhone asks."
-                else "Use a USB data cable and unlock your iPhone.\nAllow Trust and CarPlay if your iPhone asks."
+            text = t(if (wirelessEnabled) "Keep your iPhone nearby with Bluetooth and Wi-Fi on.\nAllow CarPlay if your iPhone asks."
+                else "Use a USB data cable and unlock your iPhone.\nAllow Trust and CarPlay if your iPhone asks.")
             textSize = 17f; gravity = Gravity.CENTER; setTextColor(Color.rgb(168, 182, 202))
             setPadding(0, dp(14), 0, dp(24))
         })
         panel.addView(Button(this).apply {
-            text = "Reset CarPlay Wi-Fi"; isAllCaps = false; textSize = 18f
+            text = t("Reset CarPlay Wi-Fi"); isAllCaps = false; textSize = 18f
             visibility = View.GONE
             setOnClickListener { showDiPlayHome("wireless-recovery") }
             wifiRecoveryButton = this
         }, LinearLayout.LayoutParams(dp(300), dp(64)).apply { bottomMargin = dp(12) })
         panel.addView(Button(this).apply {
-            text = "Back to DiPlay"; isAllCaps = false; textSize = 18f
+            text = t("Back to DiPlay"); isAllCaps = false; textSize = 18f
             setTextColor(Color.rgb(12, 17, 27))
             background = GradientDrawable().apply { setColor(Color.rgb(166, 200, 255)); cornerRadius = dp(20).toFloat() }
             setOnClickListener { showDiPlayHome() }
         }, LinearLayout.LayoutParams(dp(300), dp(64)))
         panel.addView(TextView(this).apply {
-            text = "In CarPlay, swipe down with three fingers to open DiPlay settings."
+            text = t("In CarPlay, swipe down with three fingers to open DiPlay settings.")
             textSize = 13f; gravity = Gravity.CENTER; setTextColor(Color.rgb(168, 182, 202)); setPadding(0, dp(20), 0, 0)
         })
         root.addView(panel, FrameLayout.LayoutParams(-1, -1))
@@ -711,7 +724,7 @@ class CarPlayHostActivity : ComponentActivity() {
         )
         val wirelessSwitch = Switch(this).apply {
             isChecked = wirelessEnabled
-            contentDescription = "Wireless CarPlay transport"
+            contentDescription = t("Wireless CarPlay transport")
             showText = false
             thumbTintList = ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
@@ -1021,7 +1034,7 @@ class CarPlayHostActivity : ComponentActivity() {
         )
         val hevcSwitch = Switch(this).apply {
             isChecked = hevcEnabled
-            contentDescription = "HEVC H.265 video transport"
+            contentDescription = t("HEVC H.265 video transport")
             showText = false
             thumbTintList = ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
@@ -1066,7 +1079,7 @@ class CarPlayHostActivity : ComponentActivity() {
         )
         val softwareHevcSwitch = Switch(this).apply {
             isChecked = hevcSoftwareDecoderEnabled
-            contentDescription = "Use software HEVC decoder"
+            contentDescription = t("Use software HEVC decoder")
             showText = false
             thumbTintList = ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
@@ -1175,7 +1188,7 @@ class CarPlayHostActivity : ComponentActivity() {
         )
 
         val save = Button(this).apply {
-            text = "Save and reconnect"
+            text = t("Save and reconnect")
             isAllCaps = false
             textSize = 17f
             setTextColor(MENU_BUTTON_TEXT)
@@ -1192,7 +1205,7 @@ class CarPlayHostActivity : ComponentActivity() {
         )
 
         val exitApplicationButton = Button(this).apply {
-            text = "EXIT APPLICATION"
+            text = t("EXIT APPLICATION")
             isAllCaps = false
             textSize = 17f
             setTextColor(Color.WHITE)
@@ -1232,7 +1245,7 @@ class CarPlayHostActivity : ComponentActivity() {
                 textSize = 22f
                 setTextColor(Color.WHITE)
                 backgroundTintList = ColorStateList.valueOf(MENU_TRACK_OFF)
-                contentDescription = "Discard changes and exit settings"
+                contentDescription = t("Discard changes and exit settings")
                 minWidth = 0
                 minHeight = 0
                 setPadding(0, 0, 0, 0)
@@ -1567,7 +1580,7 @@ class CarPlayHostActivity : ComponentActivity() {
             )
             val switch = Switch(this@CarPlayHostActivity).apply {
                 isChecked = locationReportingEnabled
-                contentDescription = "Report Android location to the iPhone"
+                contentDescription = t("Report Android location to the iPhone")
                 showText = false
                 thumbTintList = ColorStateList(
                     arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
@@ -1679,7 +1692,7 @@ class CarPlayHostActivity : ComponentActivity() {
                 object : SeekBar.OnSeekBarChangeListener {
                     override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                         val value = values.getOrNull(progress) ?: return
-                        valueView.text = label(value)
+                        valueView.text = t(label(value))
                         if (fromUser) onValueChanged(value)
                     }
 
@@ -1730,7 +1743,7 @@ class CarPlayHostActivity : ComponentActivity() {
         }
         actions.addView(
             Button(this).apply {
-                text = "Choose image"
+                text = t("Choose image")
                 isAllCaps = false
                 setOnClickListener {
                     externalActivityInProgress = true
@@ -1744,7 +1757,7 @@ class CarPlayHostActivity : ComponentActivity() {
         )
         actions.addView(
             Button(this).apply {
-                text = "Default icon"
+                text = t("Default icon")
                 isAllCaps = false
                 setOnClickListener {
                     AirPlayPersistence.clearCustomAirPlayIcon(this@CarPlayHostActivity)
@@ -1801,13 +1814,13 @@ class CarPlayHostActivity : ComponentActivity() {
         }
         val left = RadioButton(this).apply {
             id = View.generateViewId()
-            text = "Left-hand drive"
+            text = t("Left-hand drive")
             setTextColor(Color.WHITE)
             isChecked = !rightHandDrive
         }
         val right = RadioButton(this).apply {
             id = View.generateViewId()
-            text = "Right-hand drive"
+            text = t("Right-hand drive")
             setTextColor(Color.WHITE)
             isChecked = rightHandDrive
         }
@@ -1895,7 +1908,7 @@ class CarPlayHostActivity : ComponentActivity() {
         }
         buttons.addView(
             Button(this).apply {
-                text = "Set"
+                text = t("Set")
                 isAllCaps = false
                 setOnClickListener { openSafeAreaEditor() }
             },
@@ -1903,7 +1916,7 @@ class CarPlayHostActivity : ComponentActivity() {
         )
         buttons.addView(
             Button(this).apply {
-                text = "Reset"
+                text = t("Reset")
                 isAllCaps = false
                 setOnClickListener { resetSafeAreaForCurrentSize() }
             },
@@ -1967,7 +1980,7 @@ class CarPlayHostActivity : ComponentActivity() {
         }
         controls.addView(
             Button(this).apply {
-                text = "Cancel"
+                text = t("Cancel")
                 isAllCaps = false
                 setOnClickListener { closeSafeAreaEditor() }
             },
@@ -1975,7 +1988,7 @@ class CarPlayHostActivity : ComponentActivity() {
         )
         controls.addView(
             Button(this).apply {
-                text = "Save"
+                text = t("Save")
                 isAllCaps = false
                 setOnClickListener { saveSafeAreaEditor() }
             },
@@ -2056,7 +2069,7 @@ class CarPlayHostActivity : ComponentActivity() {
         addView(
             Switch(this@CarPlayHostActivity).apply {
                 isChecked = checked
-                contentDescription = description
+                contentDescription = t(description)
                 showText = false
                 thumbTintList = ColorStateList(
                     arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
@@ -2123,7 +2136,7 @@ class CarPlayHostActivity : ComponentActivity() {
         for ((mode, label) in modes) {
             val button = RadioButton(this).apply {
                 id = View.generateViewId()
-                text = label
+                text = t(label)
                 textSize = 18f
                 setTextColor(MENU_SECONDARY)
                 buttonTintList = ColorStateList(
@@ -2293,7 +2306,7 @@ class CarPlayHostActivity : ComponentActivity() {
             '\u0000' in remoteMfiToken -> "Remote token contains U+0000"
             else -> null
         }
-        mfiErrorView?.text = error.orEmpty()
+        mfiErrorView?.text = t(error.orEmpty())
         mfiErrorView?.visibility = if (error == null) View.GONE else View.VISIBLE
         return error == null
     }
@@ -2318,7 +2331,7 @@ class CarPlayHostActivity : ComponentActivity() {
                 "WPA2/WPA3 password must be 8-63 characters"
             else -> null
         }
-        manualHotspotErrorView?.text = error.orEmpty()
+        manualHotspotErrorView?.text = t(error.orEmpty())
         manualHotspotErrorView?.visibility = if (error == null) View.GONE else View.VISIBLE
         return error == null
     }
@@ -2335,12 +2348,14 @@ class CarPlayHostActivity : ComponentActivity() {
         color: Int,
         bold: Boolean = false,
     ): TextView = TextView(this).apply {
-        this.text = text
+        this.text = t(text)
         textSize = sizeSp
         setTextColor(color)
         typeface = if (bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
         includeFontPadding = false
     }
+
+    private fun t(value: String) = AppLocale.text(this, value)
 
     private fun updateHotspotStatus(status: CarPlayStatus) {
         if (!wirelessEnabled) return
@@ -2371,17 +2386,17 @@ class CarPlayHostActivity : ComponentActivity() {
 
     private fun updateHotspotStatusBlock() {
         if (!wirelessEnabled) {
-            hotspotStatusView?.text = "Wireless hotspot: off"
+            hotspotStatusView?.text = t("Wireless hotspot: off")
             return
         }
         val status = hotspotStatus
         hotspotStatusView?.text = buildString {
-            append("Wireless hotspot: ").append(status.state)
-            status.ssid?.let { append("\nSSID: ").append(it) }
-            status.backend?.let { append("\nBackend: ").append(it) }
-            status.band?.let { append("\nBand: ").append(it) }
+            append(t("Wireless hotspot: ")).append(t(status.state))
+            status.ssid?.let { append("\n${t("SSID")}: ").append(it) }
+            status.backend?.let { append("\n${t("Backend")}: ").append(it) }
+            status.band?.let { append("\n${t("Band")}: ").append(it) }
             status.channel?.let {
-                append("\nChannel: ").append(if (it == 0) "Auto" else it.toString())
+                append("\n${t("Channel")}: ").append(if (it == 0) t("Auto") else it.toString())
             }
         }
     }
@@ -2409,7 +2424,7 @@ class CarPlayHostActivity : ComponentActivity() {
         for ((value, text) in options) {
             val button = RadioButton(this@CarPlayHostActivity).apply {
                 id = View.generateViewId()
-                this.text = text
+                this.text = t(text)
                 textSize = 17f
                 setTextColor(MENU_SECONDARY)
                 buttonTintList = ColorStateList(
@@ -2443,7 +2458,7 @@ class CarPlayHostActivity : ComponentActivity() {
     }
 
     private fun updateResolutionMenu() {
-        resolutionValueView?.text = CarPlayDisplayScale.label(displayScaleTenths)
+        resolutionValueView?.text = t(CarPlayDisplayScale.label(displayScaleTenths))
         val native = activeDisplaySize ?: currentActivitySize()
         val resolution = if (native == null) {
             "Handshake resolution: waiting for display"
@@ -2466,11 +2481,11 @@ class CarPlayHostActivity : ComponentActivity() {
             "HEVC (H.265, ${if (hevcSoftwareDecoderEnabled) "software" else "hardware"})"
         }
         val fullscreen = buildString {
-            append(if (hideTopBar) "top hidden" else "top shown")
+            append(t(if (hideTopBar) "top hidden" else "top shown"))
             append(", ")
-            append(if (hideBottomBar) "bottom hidden" else "bottom shown")
+            append(t(if (hideBottomBar) "bottom hidden" else "bottom shown"))
         }
-        resolutionPreviewView?.text = buildString {
+        resolutionPreviewView?.text = t(buildString {
             append(resolution).append('\n')
             append("Identity: ").append(normalizedManufacturer()).append(" / ")
                 .append(normalizedModel()).append('\n')
@@ -2505,7 +2520,7 @@ class CarPlayHostActivity : ComponentActivity() {
                     .append('\n')
             }
             append(safeAreaSummary())
-        }
+        })
     }
 
     private data class CanvasSupport(val supported: Boolean, val reason: String, val details: String)
@@ -2570,9 +2585,11 @@ class CarPlayHostActivity : ComponentActivity() {
             AirPlayPersistence.saveUiScalePercent(this, uiScalePercent)
             appendLog("Larger CarPlay canvas unavailable reason=${support.reason}; using Default icon and text size")
             runOnUiThread {
-                android.widget.Toast.makeText(this,
-                    "This head unit cannot use the smaller size at this resolution. Using Default.",
-                    android.widget.Toast.LENGTH_LONG).show()
+                android.widget.Toast.makeText(
+                    this,
+                    t("This head unit cannot use the smaller size at this resolution. Using Default."),
+                    android.widget.Toast.LENGTH_LONG,
+                ).show()
             }
         }
         appendLog("CarPlay size=${CarPlayUiScale.label(uiScalePercent)} canvas=${scaledDisplay.widthPixels}x${scaledDisplay.heightPixels}")
@@ -2656,8 +2673,9 @@ class CarPlayHostActivity : ComponentActivity() {
         }
         val bitmap = customBitmap ?: BitmapFactory.decodeResource(resources, R.raw.placeholder_icon)
         preview.setImageBitmap(bitmap)
-        iconStatusView?.text =
-            if (customBitmap != null) "Custom 1:1 icon" else "Default placeholder icon"
+        iconStatusView?.text = t(
+            if (customBitmap != null) "Custom 1:1 icon" else "Default placeholder icon",
+        )
     }
 
     private fun currentActivitySize(): DisplaySize? {
@@ -2679,14 +2697,14 @@ class CarPlayHostActivity : ComponentActivity() {
         )
 
     private fun safeAreaSummary(): String {
-        val size = currentActivitySize() ?: return "Safe area: waiting for activity size"
+        val size = currentActivitySize() ?: return t("Safe area: waiting for activity size")
         val mapping = AirPlayPersistence.loadSafeAreaRect(this, size.width, size.height)
-        return if (mapping == null) {
+        return t(if (mapping == null) {
             "Safe area: full screen at ${size.width} x ${size.height}"
         } else {
             "Safe area: ${mapping.width} x ${mapping.height} at " +
                 "(${mapping.left}, ${mapping.top}) in ${size.width} x ${size.height}"
-        }
+        })
     }
 
     private fun updateSafeAreaSummary() {
@@ -3311,7 +3329,7 @@ class CarPlayHostActivity : ComponentActivity() {
 
     private fun setConnectionStage(message: String) {
         latestStage = message
-        stageStatusView?.text = friendlyStage(message)
+        stageStatusView?.text = t(friendlyStage(message))
         updateDebugOverlays()
     }
 
